@@ -1,12 +1,12 @@
-using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class ApiCanvasManager : MonoBehaviour
 {
-    // Login/Register
     public TMP_InputField nameInputField;
     public TMP_InputField usernameInputField;
     public TMP_InputField passwordInputField;
@@ -16,11 +16,11 @@ public class ApiCanvasManager : MonoBehaviour
 
     public TextMeshProUGUI userResponse;
 
-    // Database
     public TMP_Dropdown tableDropdown;
     public TMP_Dropdown columnDropdown;
 
     public GameObject textInputPrefab;
+    public GameObject buttonPrefab;
     public Transform scrollViewContent;
 
     public Button selectButton;
@@ -28,7 +28,6 @@ public class ApiCanvasManager : MonoBehaviour
     public Button updateButton;
 
     public TextMeshProUGUI tableResponse;
-
     public ApiClient apiClient;
 
     private Dictionary<string, TMP_InputField> inputFields = new Dictionary<string, TMP_InputField>();
@@ -110,6 +109,17 @@ public class ApiCanvasManager : MonoBehaviour
 
             TMP_InputField inputField = instance.transform.Find("InputField").GetComponent<TMP_InputField>();
             inputFields[column] = inputField;
+
+            if (column.Contains("id", StringComparison.OrdinalIgnoreCase))
+            {
+                GameObject buttonGo = Instantiate(buttonPrefab, instance.transform);
+                buttonGo.GetComponentInChildren<TMP_Text>().text = "Generate";
+                Button button = buttonGo.GetComponent<Button>();
+                button.onClick.AddListener(() =>
+                {
+                    inputField.text = Guid.NewGuid().ToString();
+                });
+            }
         }
     }
 
@@ -117,7 +127,6 @@ public class ApiCanvasManager : MonoBehaviour
     {
         string username = usernameInputField.text;
         string password = passwordInputField.text;
-
         apiClient.LoginButton(username, password, userResponse);
     }
 
@@ -126,7 +135,6 @@ public class ApiCanvasManager : MonoBehaviour
         string name = nameInputField.text;
         string username = usernameInputField.text;
         string password = passwordInputField.text;
-
         apiClient.RegisterButton(name, username, password, userResponse);
     }
 
@@ -135,7 +143,6 @@ public class ApiCanvasManager : MonoBehaviour
         string table = tableDropdown.options[tableDropdown.value].text;
         string column = columnDropdown.options[columnDropdown.value].text;
         string value = inputFields[column].text;
-
         apiClient.SelectDataButton(table, column, value, tableResponse);
     }
 
@@ -152,7 +159,6 @@ public class ApiCanvasManager : MonoBehaviour
                 dataDict[field.Key] = inputValue;
             }
         }
-
         apiClient.InsertDataButton(table, dataDict, tableResponse);
     }
 
@@ -171,8 +177,6 @@ public class ApiCanvasManager : MonoBehaviour
                 dataDict[field.Key] = inputValue;
             }
         }
-
         apiClient.UpdateDataButton(table, dataDict, column, value, tableResponse);
     }
-
 }

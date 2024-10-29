@@ -151,6 +151,11 @@ public class ApiClient : MonoBehaviour
 
         yield return PostRequest(url, requestData, callback);
     }
+    public IEnumerator SelectData(string tableName, string column, string value, Action<ResponseData> callback)
+    {
+        var url = $"{config.baseUrl}{config.GetEndpointPath("select")}?table={tableName}&column={column}&value={value}";
+        yield return GetRequest(url, callback);
+    }
 
     public IEnumerator UpdateData(string tableName, Dictionary<string, object> data, string column, string value, Action<ResponseData> callback)
     {
@@ -163,18 +168,31 @@ public class ApiClient : MonoBehaviour
             { "value", value }
         };
 
-        yield return PostRequest(url, requestData, callback);
+        yield return PutRequest(url, requestData, callback);
     }
 
-    public IEnumerator SelectData(string tableName, string column, string value, Action<ResponseData> callback)
+    private IEnumerator PutRequest(string url, object jsonData, Action<ResponseData> callback)
     {
-        var url = $"{config.baseUrl}{config.GetEndpointPath("select")}?table={tableName}&column={column}&value={value}";
-        yield return GetRequest(url, callback);
+        string requestData = JsonConvert.SerializeObject(jsonData);
+        print(requestData);
+        using var request = new UnityWebRequest(url, "PUT")
+        {
+            uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestData)),
+            downloadHandler = new DownloadHandlerBuffer()
+        };
+        request.SetRequestHeader("Content-Type", "application/json");
+
+        yield return request.SendWebRequest();
+        var response = ParseResponse(request);
+        callback?.Invoke(response);
     }
+
+  
 
     private IEnumerator PostRequest(string url, object jsonData, Action<ResponseData> callback)
     {
         string requestData = JsonConvert.SerializeObject(jsonData);
+        print(requestData);
         using var request = new UnityWebRequest(url, "POST")
         {
             uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestData)),
