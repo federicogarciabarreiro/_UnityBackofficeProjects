@@ -1,14 +1,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using MyBox;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
 
 public class ApiClient : MonoBehaviour
 {
-    [SerializeField] private BackendConfig config;
+    [SerializeField] public BackendConfig config;
 
     [ReadOnly][SerializeField] private string sessionUUID;
     [ReadOnly][SerializeField] private string userUUID;
@@ -21,30 +25,51 @@ public class ApiClient : MonoBehaviour
     public void SetPassword(string _password) => password = _password;
     public void SetName(string n) => _name = n;
 
+    //Valores
+
+    [ReadOnly] public string actionId, actionDescription;
+    [ReadOnly] public string gameId, gameName;
+    [ReadOnly] public string gameSessionId, sessionId;
+    [ReadOnly] public string scoreId, scoreName, scoreValue;
+    [ReadOnly] public string userId, userName, userEmail;
+
     // Métodos públicos para manejar los botones
-    public void InsertDataButton(string tableName, Dictionary<string, object> data)
+    public void InsertDataButton(string tableName, Dictionary<string, object> data, TMP_Text text)
     {
         StartCoroutine(InsertData(tableName, data, response =>
         {
             if (response.success)
+            {
                 Debug.Log("Datos insertados correctamente.");
+                text.text = "Datos insertados correctamente.";
+            }
+
             else
+            {
                 Debug.LogError($"Error al insertar datos: {response.message}");
+                text.text = $"Error al insertar datos: {response.message}";
+            }
         }));
     }
 
-    public void UpdateDataButton(string tableName, Dictionary<string, object> data, string column, string value)
+    public void UpdateDataButton(string tableName, Dictionary<string, object> data, string column, string value, TMP_Text text)
     {
         StartCoroutine(UpdateData(tableName, data, column, value, response =>
         {
             if (response.success)
+            {
                 Debug.Log("Datos actualizados correctamente.");
+                text.text = "Datos actualizados correctamente.";
+            }
             else
+            {
                 Debug.LogError($"Error al actualizar datos: {response.message}");
+                text.text = $"Error al actualizar datos: {response.message}";
+            }
         }));
     }
 
-    public void SelectDataButton(string tableName, string column, string value)
+    public void SelectDataButton(string tableName, string column, string value, TMP_Text text)
     {
         StartCoroutine(SelectData(tableName, column, value, response =>
         {
@@ -52,15 +77,17 @@ public class ApiClient : MonoBehaviour
             {
                 var data = response.data;
                 Debug.Log($"Datos seleccionados: {data}");
+                text.text = data.ToString();
             }
             else
             {
                 Debug.LogError($"Error al seleccionar datos: {response.message}");
+                text.text = $"Error al seleccionar datos: {response.message}";
             }
         }));
     }
 
-    public void LoginButton()
+    public void LoginButton(TMP_Text text)
     {
         StartCoroutine(Login(response =>
         {
@@ -68,6 +95,7 @@ public class ApiClient : MonoBehaviour
             {
                 Debug.Log("Inicio de sesión exitoso.");
                 userUUID = response.data?.ToString();
+                text.text = "Inicio de sesión exitoso.";
             }
             else
             {
@@ -76,24 +104,24 @@ public class ApiClient : MonoBehaviour
         }));
     }
 
-    public void RegisterButton(string name, string username, string password)
+    public void RegisterButton(string name, string username, string password, TMP_Text text)
     {
-
         StartCoroutine(Register(name, username, password, response =>
         {
             if (response.success)
             {
                 Debug.Log("Registro exitoso.");
                 userUUID = response.data?.ToString();
+                text.text = "Registro exitoso.";
             }
             else
             {
                 Debug.LogError($"Error en el registro: {response.message}");
+                text.text = $"Error en el registro: {response.message}";
             }
         }));
     }
 
-    // Métodos de corrutina para realizar las solicitudes
     public IEnumerator Login(Action<ResponseData> callback)
     {
         var url = $"{config.baseUrl}{config.GetEndpointPath("login")}";
@@ -102,11 +130,6 @@ public class ApiClient : MonoBehaviour
             { "username", username },
             { "password", password }
         };
-
-        print(url);
-        print(username);
-        print(password);
-        print(_name);
 
         yield return PostRequest(url, requestData, callback);
     }
@@ -138,7 +161,7 @@ public class ApiClient : MonoBehaviour
 
     public IEnumerator UpdateData(string tableName, Dictionary<string, object> data, string column, string value, Action<ResponseData> callback)
     {
-        var url = $"{config.baseUrl} {config.GetEndpointPath("update")}";
+        var url = $"{config.baseUrl}{config.GetEndpointPath("update")}";
         var requestData = new Dictionary<string, object>
         {
             { "table", tableName },
@@ -158,7 +181,7 @@ public class ApiClient : MonoBehaviour
 
     private IEnumerator PostRequest(string url, object jsonData, Action<ResponseData> callback)
     {
-        var requestData = JsonUtility.ToJson(jsonData);
+        string requestData = JsonConvert.SerializeObject(jsonData);
         using var request = new UnityWebRequest(url, "POST")
         {
             uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestData)),
@@ -179,12 +202,38 @@ public class ApiClient : MonoBehaviour
         callback?.Invoke(response);
     }
 
+
+
     private ResponseData ParseResponse(UnityWebRequest request)
     {
         if (request.result == UnityWebRequest.Result.Success)
         {
-            Debug.Log($"Respuesta recibida: {request.downloadHandler.text}");
-            return JsonUtility.FromJson<ResponseData>(request.downloadHandler.text);
+            var textData = request.downloadHandler.text;
+            Debug.Log($"Respuesta recibida: {textData}");
+
+            try
+            {
+                var jsonToken = JToken.Parse(textData);
+
+                if (jsonToken is JArray jsonArray)
+                {
+                    foreach (var item in jsonArray)
+                    {
+                        AsignarDatos(item);
+                    }
+                    return new ResponseData { success = true, data = jsonArray, message = "Array procesado con éxito." };
+                }
+                else
+                {
+                    AsignarDatos(jsonToken);
+                    return jsonToken.ToObject<ResponseData>();
+                }
+            }
+            catch (JsonException e)
+            {
+                Debug.LogError($"Error al analizar JSON: {e.Message}");
+                return new ResponseData { success = false, message = "Error en la respuesta JSON", data = textData };
+            }
         }
         else
         {
@@ -193,11 +242,29 @@ public class ApiClient : MonoBehaviour
         }
     }
 
+    private void AsignarDatos(JToken data)
+    {
+        actionId = data["action_id"]?.ToString();
+        actionDescription = data["action_description"]?.ToString();
+        gameId = data["game_id"]?.ToString();
+        gameName = data["game_name"]?.ToString();
+        gameSessionId = data["game_session_id"]?.ToString();
+        sessionId = data["session_id"]?.ToString();
+        scoreId = data["score_id"]?.ToString();
+        scoreName = data["score_name"]?.ToString();
+        scoreValue = data["score_value"]?.ToString();
+        userId = data["user_id"]?.ToString();
+        userName = data["user_name"]?.ToString();
+        userEmail = data["user_email"]?.ToString();
+    }
+
+
     [System.Serializable]
     public class ResponseData
     {
         public bool success;
         public string message;
-        public object data;
+        public object data; // Puede almacenar tanto arrays como objetos JSON completos
     }
+
 }

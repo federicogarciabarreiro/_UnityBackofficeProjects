@@ -20,8 +20,8 @@ public class BackendConfig : ScriptableObject
         public string path;
     }
 
-    public List<TableInfo> tables;
-    public List<EndpointInfo> endpoints;
+    public List<TableInfo> tables = new List<TableInfo>();
+    public List<EndpointInfo> endpoints = new List<EndpointInfo>();
 
     public string GetEndpointPath(string key)
     {
