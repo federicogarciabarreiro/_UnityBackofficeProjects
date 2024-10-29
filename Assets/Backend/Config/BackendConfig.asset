@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a38e3b15a7b8991439ee85b4d44ea6df, type: 3}
+  m_Name: BackendConfig
+  m_EditorClassIdentifier: 
+  baseUrl: https://fast-api-python-backend-one.vercel.app
+  tables:
+  - tableName: actions
+    columns:
+    - action_id
+    - action_description
+  - tableName: games
+    columns:
+    - game_id
+    - game_name
+  - tableName: games_sessions
+    columns:
+    - game_id
+    - session_id
+  - tableName: scores
+    columns:
+    - score_id
+    - score_name
+    - score_value
+  - tableName: sessions
+    columns:
+    - session_id
+  - tableName: sessions_actions
+    columns:
+    - session_id
+    - action_id
+  - tableName: users
+    columns:
+    - user_id
+    - user_name
+    - user_email
+  - tableName: sessions_actions
+    columns:
+    - user_id
+    - session_id
+  endpoints:
+  - key: register
+    path: /auth/register
+  - key: login
+    path: /auth/login
+  - key: select
+    path: /data/select
+  - key: insert
+    path: /data/insert
+  - key: update
+    path: /data/update
