@@ -119,6 +119,7 @@ public class ApiClient : MonoBehaviour
         var url = $"{config.baseUrl}{config.GetEndpointPath("login")}";
         var requestData = new Dictionary<string, string>
         {
+            { "user_name", string.Empty},
             { "email", username },
             { "password", password }
         };
