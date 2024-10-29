@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -84,7 +85,10 @@ public class ApiCanvasManager : MonoBehaviour
 
     private void OnLoginButtonClick()
     {
-        apiClient.LoginButton(userResponse);
+        string username = usernameInputField.text;
+        string password = passwordInputField.text;
+
+        apiClient.LoginButton(username, password, userResponse);
     }
 
     private void OnRegisterButtonClick()
@@ -108,9 +112,19 @@ public class ApiCanvasManager : MonoBehaviour
     private void OnInsertButtonClick()
     {
         string table = tableDropdown.options[tableDropdown.value].text;
-        string data = dataInputField.text;
+        string jsonData = dataInputField.text;
 
-        var dataDict = new Dictionary<string, object> { { "data", data } };
+        Dictionary<string, object> dataDict;
+        try
+        {
+            dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+        }
+        catch (JsonException ex)
+        {
+            Debug.LogError("Error al deserializar el JSON: " + ex.Message);
+            return;
+        }
+
         apiClient.InsertDataButton(table, dataDict, tableResponse);
     }
 
@@ -119,9 +133,19 @@ public class ApiCanvasManager : MonoBehaviour
         string table = tableDropdown.options[tableDropdown.value].text;
         string column = columnDropdown.options[columnDropdown.value].text;
         string value = valueInputField.text;
-        string data = dataInputField.text;
+        string jsonData = dataInputField.text;
 
-        var dataDict = new Dictionary<string, object> { { "data", data } };
+        Dictionary<string, object> dataDict;
+        try
+        {
+            dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+        }
+        catch (JsonException ex)
+        {
+            Debug.LogError("Error al deserializar el JSON: " + ex.Message);
+            return;
+        }
+
         apiClient.UpdateDataButton(table, dataDict, column, value, tableResponse);
     }
 }

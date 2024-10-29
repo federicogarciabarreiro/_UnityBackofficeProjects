@@ -17,14 +17,6 @@ public class ApiClient : MonoBehaviour
     [ReadOnly][SerializeField] private string sessionUUID;
     [ReadOnly][SerializeField] private string userUUID;
 
-    private string username;
-    private string password;
-    private string _name;
-
-    public void SetUsername(string _username) => username = _username;
-    public void SetPassword(string _password) => password = _password;
-    public void SetName(string n) => _name = n;
-
     //Valores
 
     [ReadOnly] public string actionId, actionDescription;
@@ -87,9 +79,9 @@ public class ApiClient : MonoBehaviour
         }));
     }
 
-    public void LoginButton(TMP_Text text)
+    public void LoginButton(string username, string password, TMP_Text text)
     {
-        StartCoroutine(Login(response =>
+        StartCoroutine(Login(username, password, response =>
         {
             if (response.success)
             {
@@ -122,12 +114,12 @@ public class ApiClient : MonoBehaviour
         }));
     }
 
-    public IEnumerator Login(Action<ResponseData> callback)
+    public IEnumerator Login(string username, string password, Action<ResponseData> callback)
     {
         var url = $"{config.baseUrl}{config.GetEndpointPath("login")}";
         var requestData = new Dictionary<string, string>
         {
-            { "username", username },
+            { "email", username },
             { "password", password }
         };
 
@@ -139,8 +131,8 @@ public class ApiClient : MonoBehaviour
         var url = $"{config.baseUrl}{config.GetEndpointPath("register")}";
         var requestData = new Dictionary<string, string>
         {
-            { "name", name },
-            { "username", username },
+            { "user_name", name },
+            { "email", username },
             { "password", password }
         };
 
