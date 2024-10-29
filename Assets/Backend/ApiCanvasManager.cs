@@ -6,23 +6,32 @@ using UnityEngine.UI;
 
 public class ApiCanvasManager : MonoBehaviour
 {
+    // Login/Register
     public TMP_InputField nameInputField;
     public TMP_InputField usernameInputField;
     public TMP_InputField passwordInputField;
+
     public Button loginButton;
     public Button registerButton;
+
     public TextMeshProUGUI userResponse;
 
+    // Database
     public TMP_Dropdown tableDropdown;
     public TMP_Dropdown columnDropdown;
-    public TMP_InputField valueInputField;
-    public TMP_InputField dataInputField;
+
+    public GameObject textInputPrefab;
+    public Transform scrollViewContent;
+
     public Button selectButton;
     public Button insertButton;
     public Button updateButton;
+
     public TextMeshProUGUI tableResponse;
 
     public ApiClient apiClient;
+
+    private Dictionary<string, TMP_InputField> inputFields = new Dictionary<string, TMP_InputField>();
 
     private void Start()
     {
@@ -76,10 +85,31 @@ public class ApiCanvasManager : MonoBehaviour
         if (columns != null && columns.Count > 0)
         {
             columnDropdown.AddOptions(columns);
+            PopulateScrollView(columns);
         }
         else
         {
             Debug.LogWarning("No se encontraron columnas para la tabla seleccionada.");
+        }
+    }
+
+    private void PopulateScrollView(List<string> columns)
+    {
+        foreach (Transform child in scrollViewContent)
+        {
+            Destroy(child.gameObject);
+        }
+        inputFields.Clear();
+
+        foreach (string column in columns)
+        {
+            GameObject instance = Instantiate(textInputPrefab, scrollViewContent);
+
+            TMP_Text label = instance.transform.Find("Label").GetComponent<TMP_Text>();
+            label.text = column;
+
+            TMP_InputField inputField = instance.transform.Find("InputField").GetComponent<TMP_InputField>();
+            inputFields[column] = inputField;
         }
     }
 
@@ -104,7 +134,7 @@ public class ApiCanvasManager : MonoBehaviour
     {
         string table = tableDropdown.options[tableDropdown.value].text;
         string column = columnDropdown.options[columnDropdown.value].text;
-        string value = valueInputField.text;
+        string value = inputFields[column].text;
 
         apiClient.SelectDataButton(table, column, value, tableResponse);
     }
@@ -112,17 +142,15 @@ public class ApiCanvasManager : MonoBehaviour
     private void OnInsertButtonClick()
     {
         string table = tableDropdown.options[tableDropdown.value].text;
-        string jsonData = dataInputField.text;
 
-        Dictionary<string, object> dataDict;
-        try
+        Dictionary<string, object> dataDict = new Dictionary<string, object>();
+        foreach (var field in inputFields)
         {
-            dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
-        }
-        catch (JsonException ex)
-        {
-            Debug.LogError("Error al deserializar el JSON: " + ex.Message);
-            return;
+            string inputValue = field.Value.text;
+            if (!string.IsNullOrEmpty(inputValue))
+            {
+                dataDict[field.Key] = inputValue;
+            }
         }
 
         apiClient.InsertDataButton(table, dataDict, tableResponse);
@@ -132,20 +160,19 @@ public class ApiCanvasManager : MonoBehaviour
     {
         string table = tableDropdown.options[tableDropdown.value].text;
         string column = columnDropdown.options[columnDropdown.value].text;
-        string value = valueInputField.text;
-        string jsonData = dataInputField.text;
+        string value = inputFields[column].text;
 
-        Dictionary<string, object> dataDict;
-        try
+        Dictionary<string, object> dataDict = new Dictionary<string, object>();
+        foreach (var field in inputFields)
         {
-            dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
-        }
-        catch (JsonException ex)
-        {
-            Debug.LogError("Error al deserializar el JSON: " + ex.Message);
-            return;
+            string inputValue = field.Value.text;
+            if (!string.IsNullOrEmpty(inputValue))
+            {
+                dataDict[field.Key] = inputValue;
+            }
         }
 
         apiClient.UpdateDataButton(table, dataDict, column, value, tableResponse);
     }
+
 }
