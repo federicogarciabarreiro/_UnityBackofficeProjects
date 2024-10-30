@@ -32,6 +32,8 @@ public class ApiCanvasManager : MonoBehaviour
 
     private Dictionary<string, TMP_InputField> inputFields = new Dictionary<string, TMP_InputField>();
 
+    public TMP_InputField valueInputField;
+
     private void Start()
     {
         if (apiClient == null || apiClient.config == null)
@@ -153,7 +155,7 @@ public class ApiCanvasManager : MonoBehaviour
     {
         string table = tableDropdown.options[tableDropdown.value].text;
         string column = columnDropdown.options[columnDropdown.value].text;
-        string value = inputFields[column].text;
+        string value = valueInputField.text;
         apiClient.SelectDataButton(table, column, value, tableResponse);
     }
 

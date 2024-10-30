@@ -81,7 +81,7 @@ public class ApiClient : MonoBehaviour
     {
         StartCoroutine(Login(username, password, response =>
         {
-            if (response.success)
+            if (response.success && response.message == "Inicio de sesión exitoso")
             {
                 Debug.Log("Inicio de sesión exitoso.");
                 userUUID = response.data?.ToString();
@@ -220,20 +220,46 @@ public class ApiClient : MonoBehaviour
             try
             {
                 var jsonToken = JToken.Parse(textData);
+                ResponseData responseData = new ResponseData();
 
-                if (jsonToken is JArray jsonArray)
+                if (jsonToken["access_token"] != null)
                 {
-                    foreach (var item in jsonArray)
+                    var registerResponse = jsonToken.ToObject<RegisterResponse>();
+                    if (registerResponse != null)
                     {
-                        AsignarDatos(item);
+                        responseData.success = true;
+                        responseData.data = registerResponse;
+                        responseData.message = "Registro exitoso";
+                        return responseData;
                     }
-                    return new ResponseData { success = true, data = jsonArray, message = "Array procesado con éxito." };
                 }
-                else
+
+                if (jsonToken["message"] != null && jsonToken["user"] != null)
                 {
-                    AsignarDatos(jsonToken);
-                    return jsonToken.ToObject<ResponseData>();
+                    var loginResponse = jsonToken.ToObject<LoginResponse>();
+                    if (loginResponse != null)
+                    {
+                        responseData.success = true;
+                        responseData.data = loginResponse.user;
+                        responseData.message = loginResponse.message;
+                        return responseData;
+                    }
                 }
+
+                if (jsonToken["table"] != null && jsonToken["data"] != null)
+                {
+                    var operationResponse = jsonToken.ToObject<OperationResponse>();
+                    if (operationResponse != null)
+                    {
+                        responseData.success = true;
+                        responseData.data = operationResponse.data;
+                        responseData.message = $"Operación exitosa en la tabla {operationResponse.table}";
+                        return responseData;
+                    }
+                }
+
+                Debug.LogError("Respuesta no válida: la estructura JSON no coincide");
+                return new ResponseData { success = false, message = "Respuesta no válida", data = textData };
             }
             catch (JsonException e)
             {
@@ -244,18 +270,11 @@ public class ApiClient : MonoBehaviour
         else
         {
             string errorMessage = request.downloadHandler.text;
-            if (request.responseCode == 422)
-            {
-                Debug.LogError($"Error 422: Datos no procesables. Detalles: {errorMessage}");
-            }
-            else
-            {
-                Debug.LogError($"Error {request.responseCode}: {errorMessage}");
-            }
-
+            Debug.LogError($"Error {request.responseCode}: {errorMessage}");
             return new ResponseData { success = false, message = errorMessage };
         }
     }
+
 
     private void AsignarDatos(JToken data)
     {
@@ -273,12 +292,41 @@ public class ApiClient : MonoBehaviour
         userEmail = data["user_email"]?.ToString();
     }
 
-    [System.Serializable]
+    public class RegisterResponse
+    {
+        public string email { get; set; }
+        public string user_name { get; set; }
+        public string access_token { get; set; }
+        public string refresh_token { get; set; }
+    }
+
+    public class LoginResponse
+    {
+        public string message { get; set; }
+        public User user { get; set; }
+    }
+
+    public class User
+    {
+        public string email { get; set; }
+        public string user_name { get; set; }
+        public string access_token { get; set; }
+        public string refresh_token { get; set; }
+    }
+
     public class ResponseData
     {
-        public bool success;
-        public string message;
-        public object data; // Puede almacenar tanto arrays como objetos JSON completos
+        public bool success { get; set; }
+        public string message { get; set; }
+        public object data { get; set; }
     }
+
+    public class OperationResponse
+    {
+        public string table { get; set; }
+        public object data { get; set; }
+    }
+
+
 }
 
