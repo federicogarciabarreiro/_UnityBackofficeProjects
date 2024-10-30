@@ -110,7 +110,7 @@ public class ApiCanvasManager : MonoBehaviour
             TMP_InputField inputField = instance.transform.Find("InputField").GetComponent<TMP_InputField>();
             inputFields[column] = inputField;
 
-            if (column.Contains("id", StringComparison.OrdinalIgnoreCase))
+            if (column.Contains("_id", StringComparison.OrdinalIgnoreCase))
             {
                 GameObject buttonGo = Instantiate(buttonPrefab, instance.transform);
                 buttonGo.GetComponentInChildren<TMP_Text>().text = "Generate";
@@ -118,6 +118,17 @@ public class ApiCanvasManager : MonoBehaviour
                 button.onClick.AddListener(() =>
                 {
                     inputField.text = Guid.NewGuid().ToString();
+                });
+            }
+
+            if (column.Contains("_at", StringComparison.OrdinalIgnoreCase))
+            {
+                GameObject buttonGo = Instantiate(buttonPrefab, instance.transform);
+                buttonGo.GetComponentInChildren<TMP_Text>().text = "Generate";
+                Button button = buttonGo.GetComponent<Button>();
+                button.onClick.AddListener(() =>
+                {
+                    inputField.text = GetCurrentDateTime();
                 });
             }
         }
@@ -178,5 +189,10 @@ public class ApiCanvasManager : MonoBehaviour
             }
         }
         apiClient.UpdateDataButton(table, dataDict, column, value, tableResponse);
+    }
+
+    public static string GetCurrentDateTime()
+    {
+        return DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
     }
 }

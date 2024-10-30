@@ -18,35 +18,43 @@ MonoBehaviour:
     columns:
     - action_id
     - action_description
+    - created_at
   - tableName: games
     columns:
     - game_id
     - game_name
+    - created_at
   - tableName: games_sessions
     columns:
     - game_id
     - session_id
+    - created_at
   - tableName: scores
     columns:
     - score_id
     - score_name
     - score_value
+    - created_at
   - tableName: sessions
     columns:
     - session_id
+    - created_at
   - tableName: sessions_actions
     columns:
     - session_id
     - action_id
+    - created_at
   - tableName: users
     columns:
     - user_id
     - user_name
     - user_email
+    - created_at
   - tableName: sessions_actions
     columns:
     - user_id
     - session_id
+    - created_at
   endpoints:
   - key: register
     path: /auth/register

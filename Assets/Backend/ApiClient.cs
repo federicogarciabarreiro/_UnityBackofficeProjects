@@ -17,8 +17,7 @@ public class ApiClient : MonoBehaviour
     [ReadOnly][SerializeField] private string sessionUUID;
     [ReadOnly][SerializeField] private string userUUID;
 
-    //Valores
-
+    // Valores
     [ReadOnly] public string actionId, actionDescription;
     [ReadOnly] public string gameId, gameName;
     [ReadOnly] public string gameSessionId, sessionId;
@@ -35,7 +34,6 @@ public class ApiClient : MonoBehaviour
                 Debug.Log("Datos insertados correctamente.");
                 text.text = "Datos insertados correctamente.";
             }
-
             else
             {
                 Debug.LogError($"Error al insertar datos: {response.message}");
@@ -92,6 +90,7 @@ public class ApiClient : MonoBehaviour
             else
             {
                 Debug.LogError($"Error al iniciar sesión: {response.message}");
+                text.text = $"Error al iniciar sesión: {response.message}";
             }
         }));
     }
@@ -119,7 +118,6 @@ public class ApiClient : MonoBehaviour
         var url = $"{config.baseUrl}{config.GetEndpointPath("login")}";
         var requestData = new Dictionary<string, string>
         {
-            { "user_name", string.Empty},
             { "email", username },
             { "password", password }
         };
@@ -151,6 +149,7 @@ public class ApiClient : MonoBehaviour
 
         yield return PostRequest(url, requestData, callback);
     }
+
     public IEnumerator SelectData(string tableName, string column, string value, Action<ResponseData> callback)
     {
         var url = $"{config.baseUrl}{config.GetEndpointPath("select")}?table={tableName}&column={column}&value={value}";
@@ -187,8 +186,6 @@ public class ApiClient : MonoBehaviour
         callback?.Invoke(response);
     }
 
-  
-
     private IEnumerator PostRequest(string url, object jsonData, Action<ResponseData> callback)
     {
         string requestData = JsonConvert.SerializeObject(jsonData);
@@ -212,8 +209,6 @@ public class ApiClient : MonoBehaviour
         var response = ParseResponse(request);
         callback?.Invoke(response);
     }
-
-
 
     private ResponseData ParseResponse(UnityWebRequest request)
     {
@@ -248,8 +243,17 @@ public class ApiClient : MonoBehaviour
         }
         else
         {
-            Debug.LogError($"Error en la solicitud: {request.error}");
-            return new ResponseData { success = false, message = request.error };
+            string errorMessage = request.downloadHandler.text;
+            if (request.responseCode == 422)
+            {
+                Debug.LogError($"Error 422: Datos no procesables. Detalles: {errorMessage}");
+            }
+            else
+            {
+                Debug.LogError($"Error {request.responseCode}: {errorMessage}");
+            }
+
+            return new ResponseData { success = false, message = errorMessage };
         }
     }
 
@@ -269,7 +273,6 @@ public class ApiClient : MonoBehaviour
         userEmail = data["user_email"]?.ToString();
     }
 
-
     [System.Serializable]
     public class ResponseData
     {
@@ -277,5 +280,5 @@ public class ApiClient : MonoBehaviour
         public string message;
         public object data; // Puede almacenar tanto arrays como objetos JSON completos
     }
-
 }
+
