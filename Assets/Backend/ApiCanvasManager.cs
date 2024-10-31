@@ -35,6 +35,10 @@ public class ApiCanvasManager : MonoBehaviour
     public GameObject buttonPrefab;
 
     public TextMeshProUGUI tableResponse;
+
+    [Header("Score Public References")]
+    public TextMeshProUGUI resultText;
+    public Button scoreButton;
     
     private Dictionary<string, TMP_InputField> inputFields = new Dictionary<string, TMP_InputField>();
 
@@ -161,6 +165,7 @@ public class ApiCanvasManager : MonoBehaviour
         selectButton.onClick.AddListener(OnSelectButtonClick);
         insertButton.onClick.AddListener(OnInsertButtonClick);
         updateButton.onClick.AddListener(OnUpdateButtonClick);
+        scoreButton.onClick.AddListener(OnGetTopScoresButtonClick);
 
         tableDropdown.onValueChanged.AddListener(delegate { UpdateColumnDropdown(); });
     }
@@ -221,6 +226,15 @@ public class ApiCanvasManager : MonoBehaviour
         }
         apiClient.UpdateDataButton(table, dataDict, column, value, tableResponse);
     }
+
+    private void OnGetTopScoresButtonClick()
+    {
+        string gameName = valueInputField.text;
+        int limit = 10;
+        apiClient.GetTopScoresButton(gameName, limit, resultText);
+    }
+
+
 
     #endregion
 }

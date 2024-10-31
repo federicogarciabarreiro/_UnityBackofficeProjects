@@ -172,6 +172,41 @@ public class ApiClient : MonoBehaviour
         }));
     }
 
+    public void GetTopScoresButton(string gameName, int limit, TMP_Text text)
+    {
+        StartCoroutine(GetTopScores(gameName, limit, response =>
+        {
+            if (response.success)
+            {
+                var scoresList = response.data as List<Dictionary<string, object>>;
+                if (scoresList != null && scoresList.Count > 0)
+                {
+                    string scoresText = "";
+                    foreach (var scoreDict in scoresList)
+                    {
+                        var position = Convert.ToInt32(scoreDict["position"]);
+                        var scoreValue = scoreDict["score_value"].ToString();
+                        var scoreName = scoreDict["score_name"].ToString();
+
+                        scoresText += $"Posición: {position}, Puntaje: {scoreValue}, Nombre: {scoreName}\n";
+                    }
+
+                    text.text = scoresText;
+                }
+                else
+                {
+                    text.text = "No se encontraron puntajes.";
+                }
+            }
+            else
+            {
+                HandleErrorResponse(response.message, text);
+            }
+        }));
+    }
+
+
+
 
     private void HandleErrorResponse(string message, TMP_Text text)
     {
@@ -249,6 +284,57 @@ public class ApiClient : MonoBehaviour
         };
 
         yield return PutRequest(url, requestData, callback);
+    }
+
+    public IEnumerator GetTopScores(string gameName, int limit, Action<ResponseData> callback)
+    {
+        var url = $"{backendConfig.baseUrl}{backendConfig.GetEndpointPath("top")}?game_name={gameName}&limit={limit}";
+
+        yield return GetRequest(url, (ResponseData response) =>
+        {
+            if (response.success)
+            {
+                try
+                {
+                    var scoresList = response.data as List<Dictionary<string, object>>;
+
+                    if (scoresList != null && scoresList.Count > 0)
+                    {
+                        var scores = new List<ScoreData>();
+
+                        foreach (var scoreDict in scoresList)
+                        {
+                            var score = new ScoreData
+                            {
+                                position = Convert.ToInt32(scoreDict["position"]),
+                                score_value = scoreDict["score_value"].ToString(),
+                                score_name = scoreDict["score_name"].ToString()
+                            };
+
+                            scores.Add(score);
+                            Debug.Log($"Position: {score.position}, Score: {score.score_value}, Name: {score.score_name}");
+                        }
+
+                        callback?.Invoke(response);
+                    }
+                    else
+                    {
+                        Debug.LogError("Formato inesperado en los datos de respuesta: la lista de puntajes está vacía.");
+                        callback?.Invoke(new ResponseData { success = false, message = "Formato inesperado en los datos de respuesta." });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Error al procesar la respuesta: {ex.Message}");
+                    callback?.Invoke(new ResponseData { success = false, message = "Error al procesar la respuesta." });
+                }
+            }
+            else
+            {
+                Debug.LogError("Error en la respuesta: " + response.message);
+                callback?.Invoke(response);
+            }
+        });
     }
 
     #endregion
@@ -341,7 +427,6 @@ public class ApiClient : MonoBehaviour
         }
     }
 
-
     private ResponseData ParseRegisterResponse(JToken jsonToken)
     {
         var registerResponse = jsonToken.ToObject<RegisterResponse>();
@@ -389,13 +474,23 @@ public class ApiClient : MonoBehaviour
             }
         }
 
-        Debug.Log("Parsed");
-
         return new ResponseData
         {
             success = true,
             data = selectData ?? new List<Dictionary<string, object>>(),
             message = "Consulta exitosa"
+        };
+    }
+
+    private ResponseData ParseScoreResponse(JArray jsonArray)
+    {
+        var scores = jsonArray.ToObject<ScoreData[]>();
+
+        return new ResponseData
+        {
+            success = true,
+            data = scores,
+            message = "Puntajes obtenidos correctamente"
         };
     }
 
@@ -445,6 +540,10 @@ public class ApiClient : MonoBehaviour
                 case "created_at":
                     created_at = property.Value.ToString();
                     break;
+                case "position":
+                    created_at = property.Value.ToString();
+                    break;
+
                 default:
                     Debug.LogWarning($"Propiedad desconocida: {property.Name}");
                     break;
@@ -490,6 +589,13 @@ public class ApiClient : MonoBehaviour
     {
         public string table { get; set; }
         public object data { get; set; }
+    }
+
+    public class ScoreData
+    {
+        public int position { get; set; }
+        public string score_value { get; set; }
+        public string score_name { get; set; }
     }
 
     #endregion

@@ -66,3 +66,5 @@ MonoBehaviour:
     path: /data/insert
   - key: update
     path: /data/update
+  - key: top
+    path: /scores/top
