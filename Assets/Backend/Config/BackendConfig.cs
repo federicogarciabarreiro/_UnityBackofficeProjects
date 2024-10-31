@@ -6,22 +6,10 @@ public class BackendConfig : ScriptableObject
 {
     public string baseUrl;
 
-    [System.Serializable]
-    public struct TableInfo
-    {
-        public string tableName;
-        public List<string> columns;
-    }
-
-    [System.Serializable]
-    public struct EndpointInfo
-    {
-        public string key;
-        public string path;
-    }
-
     public List<TableInfo> tables = new List<TableInfo>();
     public List<EndpointInfo> endpoints = new List<EndpointInfo>();
+
+    #region Validate Functions
 
     public string GetEndpointPath(string key)
     {
@@ -39,4 +27,24 @@ public class BackendConfig : ScriptableObject
         var table = tables.Find(t => t.tableName == tableName);
         return table.columns.Contains(columnName);
     }
+
+    #endregion
+
+    #region Structs
+
+    [System.Serializable]
+    public struct TableInfo
+    {
+        public string tableName;
+        public List<string> columns;
+    }
+
+    [System.Serializable]
+    public struct EndpointInfo
+    {
+        public string key;
+        public string path;
+    }
+
+    #endregion
 }
