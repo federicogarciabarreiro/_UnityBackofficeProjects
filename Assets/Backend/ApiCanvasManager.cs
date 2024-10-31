@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class ApiCanvasManager : MonoBehaviour
@@ -37,6 +38,9 @@ public class ApiCanvasManager : MonoBehaviour
     
     private Dictionary<string, TMP_InputField> inputFields = new Dictionary<string, TMP_InputField>();
 
+    [Header("Events")]
+    public UnityEvent startEvent;
+
     private void Start()
     {
         if (apiClient == null || apiClient.backendConfig == null)
@@ -47,6 +51,8 @@ public class ApiCanvasManager : MonoBehaviour
 
         AssignEvents();
         InitDropdownValues();
+
+        startEvent.Invoke();
     }
 
     #region Generative Functions
